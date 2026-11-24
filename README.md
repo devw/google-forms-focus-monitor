@@ -20,7 +20,7 @@ node --env-file=.env server.mjs
 
 Open the **Quiz** URL printed in the terminal. In LAN mode, share the URL containing the teacher computer's classroom-network IP address. The computer must stay awake, the process must stay running, and the student network and firewall must allow connections to that port. Test from a student device before the quiz. For off-campus access, use a reachable HTTPS reverse proxy or an institutional VPN. Use HTTPS on shared networks to protect traffic in transit.
 
-1. Students open the class link, enter their first and last name in one field (for example, Mark Smith), and select **Start quiz**. The teacher report shows this self-reported name under `nome_completo` as soon as the start event reaches the server.
+1. Students open the class link, enter their given names in **First Name** and their family name in **Last Name**, and select **Start quiz**. The teacher report shows this self-reported name under `nome_completo` as soon as the start event reaches the server.
 2. The session continues after a fullscreen exit. Students can return to fullscreen without reloading the quiz.
 3. Students submit their answers inside Google Forms, then select **Finish session** to end monitoring. They can see their own event timeline.
 4. The teacher can read all received events at any time in a second terminal on the host:
@@ -41,7 +41,7 @@ This permanently clears all local events, participant details and imported email
 
 ## Prefill the student name in Google Forms
 
-In the Google Forms editor, choose **Pre-fill form**. Type `FIRST_NAME` into the First Name answer and `LAST_NAME` into Last Name. Copy the generated full link to `FORM_URL` in your local `.env`, restart the server, and distribute the printed class URL. The monitor substitutes the student's name before opening the embedded form. The student can review both answers. With a space-separated name the first word fills First Name and the remaining words fill Last Name. A comma sets an explicit boundary, as in `Giuseppe Antonio, De Luca`.
+In the Google Forms editor, choose **Pre-fill form**. Type `FIRST_NAME` into the First Name answer and `LAST_NAME` into Last Name. Copy the generated full link to `FORM_URL` in your local `.env`, restart the server, and distribute the printed class URL. The monitor substitutes the student's name before opening the embedded form. The student can review both answers. Each input fills its corresponding answer, preserving compound given and family names.
 
 For Student ID, use `STUDENT_ID` as the sample answer. For a short-answer email question, enter `student@example.com`. For Google's built-in responder-entered email, if the generated link omits the email field, append `&emailAddress=student@example.com` to the existing prefilled URL. Check this behavior on your form; verified Google accounts require sign-in. Only configured fields appear on the welcome page. The local report includes the entered email and student ID immediately.
 

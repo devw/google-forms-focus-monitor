@@ -108,9 +108,16 @@ async function receive(req, res) {
       (event.type === 'Page visible again' && (!Number.isSafeInteger(event.durationMs) || event.durationMs < 0))) return respond(res,400);
   if (event.fullName !== undefined) {
     if (event.seq !== 1 || event.type !== 'Session started' || event.student !== auth[1] ||
-        typeof event.fullName !== 'string' || !event.fullName.trim() || event.fullName.length > 160 ||
+        typeof event.fullName !== 'string' || !event.fullName.trim() || event.fullName.length > 161 ||
         /[\x00-\x1f\x7f-\x9f]/u.test(event.fullName)) return respond(res,400);
     const details = {'Full name': event.fullName.trim()};
+    if (event.firstName !== undefined || event.lastName !== undefined) {
+      for (const [label, value] of [['First Name', event.firstName], ['Last Name', event.lastName]]) {
+        if (typeof value !== 'string' || !value.trim() || value.length > 80 ||
+            /[\x00-\x1f\x7f-\x9f]/u.test(value)) return respond(res,400);
+        details[label] = value.trim();
+      }
+    }
     if (event.email !== undefined) {
       if (typeof event.email !== 'string' || event.email.length > 254 ||
           !/^[^\s@\x00-\x1f\x7f-\x9f]+@[^\s@\x00-\x1f\x7f-\x9f]+$/u.test(event.email)) return respond(res,400);

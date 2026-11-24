@@ -9,20 +9,14 @@ let storageAvailable = true;
 if (hosted.ticket) {
   el("notice").textContent = "Your teacher receives your entered details and the fullscreen and visibility events for this attempt.";
   el("name-field").hidden = false;
-  el("full-name").disabled = false;
+  el("first-name").disabled = false;
+  el("last-name").disabled = false;
   const params = new URL(hosted.form).searchParams;
   const templateValues = [...params].filter(([key]) => /^entry\.\d+$/.test(key)).map(([, value]) => value);
   const emailConfigured = templateValues.includes("student@example.com") || params.get("emailAddress") === "student@example.com";
   for (const [id, enabled] of [["email", emailConfigured], ["student-id", templateValues.includes("STUDENT_ID")]]) {
     el(id).disabled = !enabled;
     el(id + "-field").hidden = !enabled;
-  }
-  if (templateValues.includes("FIRST_NAME") && templateValues.includes("LAST_NAME")) {
-    const hint = document.createElement("small");
-    hint.id = "name-format";
-    hint.textContent = "For a compound name, separate given names and family name with a comma (e.g. Giuseppe Antonio, De Luca).";
-    el("full-name").after(hint);
-    el("full-name").setAttribute("aria-describedby", hint.id);
   }
   el("form-choice").hidden = true;
   el("url").disabled = true;
@@ -88,11 +82,10 @@ async function enterFullscreen() {
   }
 }
 
-function prefillStudentFields(url, { fullName, email, studentId }, attempt) {
-  const parts = fullName.match(/^(.+?),\s*(.+)$/u) || fullName.match(/^(\S+)\s+(.+)$/u);
+function prefillStudentFields(url, { firstName, lastName, email, studentId }, attempt) {
   const values = new Map([
-    ["FIRST_NAME", parts ? parts[1].trim() : fullName],
-    ["LAST_NAME", parts ? parts[2].trim() : ""],
+    ["FIRST_NAME", firstName],
+    ["LAST_NAME", lastName],
     ["STUDENT_ID", studentId],
     ["student@example.com", email],
     ["MONITOR_ATTEMPT", attempt]
@@ -113,13 +106,20 @@ el("setup").addEventListener("submit", event => {
     return;
   }
   const student = hosted.ticket?.split(".")[0];
-  const fullName = hosted.ticket ? el("full-name").value.trim() : "";
-  if (hosted.ticket && (!fullName || /[\x00-\x1f\x7f-\x9f]/u.test(fullName))) {
-    el("error").textContent = "Enter your first and last name.";
-    el("full-name").focus();
-    return;
+  const details = {};
+  if (hosted.ticket) {
+    for (const id of ["first-name", "last-name"]) {
+      const input = el(id);
+      const value = input.value.trim();
+      if (!value || /[\x00-\x1f\x7f-\x9f]/u.test(value)) {
+        el("error").textContent = "Enter your first and last name.";
+        input.focus();
+        return;
+      }
+      details[input.name] = value;
+    }
+    details.fullName = details.firstName + " " + details.lastName;
   }
-  const details = { fullName };
   if (!el("email").disabled) details.email = el("email").value.trim();
   if (!el("student-id").disabled) {
     details.studentId = el("student-id").value.trim();

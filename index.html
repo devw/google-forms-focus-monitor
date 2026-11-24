@@ -28,8 +28,10 @@ iframe { flex: 1; min-height: 0; width: 100%; border: 0; background: white }
 <input type="url" id="url" required placeholder="https://docs.google.com/forms/d/e/…/viewform">
 </div>
 <div id="name-field" hidden>
-<label for="full-name">First and last name</label>
-<input id="full-name" name="fullName" autocomplete="name" maxlength="160" placeholder="Mark Smith" disabled required>
+<label for="first-name">First Name</label>
+<input id="first-name" name="firstName" autocomplete="given-name" maxlength="80" placeholder="Mark" disabled required>
+<label for="last-name">Last Name</label>
+<input id="last-name" name="lastName" autocomplete="family-name" maxlength="80" placeholder="Smith" disabled required>
 </div>
 <div id="email-field" hidden><label for="email">Email</label>
 <input id="email" type="email" autocomplete="email" maxlength="254" disabled required></div>
