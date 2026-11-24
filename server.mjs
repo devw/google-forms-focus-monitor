@@ -72,6 +72,13 @@ if (identityFields.length > 8 ||
     identityFields.some(([,label]) => !label.trim() || label.length > 50 || /[\x00-\x1f\x7f-\x9f]/u.test(label)))
   fail('Use distinct labels for up to eight short-answer identity fields in the prefilled URL.');
 const host = process.env.HOST || '127.0.0.1';
+const args = process.argv.slice(2);
+const minutesIndex = args.indexOf('--minutes');
+const minutesArg = minutesIndex === -1 ? '15' : args[minutesIndex + 1];
+const minutes = Number(minutesArg);
+if (!/^\d+$/.test(minutesArg || '') || minutes < 1 || !Number.isSafeInteger(minutes * 60000 + Date.now())) {
+  fail('Use --minutes followed by a positive whole number, for example --minutes 30.');
+}
 const port = Number(process.env.PORT || 8000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) fail('PORT must be between 1 and 65535.');
 db.prepare("INSERT OR IGNORE INTO settings VALUES ('secret', ?)").run(randomBytes(32).toString('hex'));
@@ -154,7 +161,7 @@ const server = http.createServer(async (req,res) => {
     if (req.method === 'GET' && req.url === classPath) {
       const id = randomBytes(16).toString('hex');
       const page = template.replace('<main id="welcome">', () =>
-        '<main id="welcome" data-form="' + attr(form.href) + '" data-ticket="' + id + '.' + sign(classPath + id) + '">')
+        '<main id="welcome" data-minutes="' + minutes + '" data-form="' + attr(form.href) + '" data-ticket="' + id + '.' + sign(classPath + id) + '">')
         .replace('src="monitor.js"', 'src="/monitor.js"');
       return respond(res,200,page,'text/html; charset=utf-8');
     }
