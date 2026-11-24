@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFileSync, mkdirSync, chmodSync } from 'node:fs';
@@ -168,7 +168,20 @@ const server = http.createServer(async (req,res) => {
 });
 server.on('error', error => {
   if (error.code === 'EADDRINUSE') {
-    fail('Port ' + port + ' is already in use. Stop the previous quiz server or choose another PORT in .env.');
+    const message = `Port ${port} is already in use. The quiz server could not start.`;
+    console.error(process.stderr.isTTY ? '\x1b[31m' + message + '\x1b[0m' : message);
+    if (process.platform !== 'win32') {
+      const args = ['-nP', '-iTCP:' + port, '-sTCP:LISTEN'];
+      const result = spawnSync('lsof', [...args, '-Fpc'], { encoding: 'utf8', timeout: 3000 });
+      const listeners = (result.stdout || '').matchAll(/^p(\d+)\nc([^\r\n]+)/gm);
+      let found = false;
+      for (const [, pid, command] of listeners) {
+        found = true;
+        console.error(`Listener: ${command} (PID ${pid}). To stop this process: kill -TERM ${pid}`);
+      }
+      if (!found) console.error('Find the listener with: lsof ' + args.join(' ') + '\nThen run: kill -TERM <PID>');
+    }
+    fail('After freeing the port, run the same Node command again.');
   }
   fail(error.message);
 });
