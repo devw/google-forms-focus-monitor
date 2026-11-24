@@ -1,4 +1,6 @@
 import http from 'node:http';
+import { spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFileSync, mkdirSync, chmodSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
@@ -172,8 +174,53 @@ server.listen(port,host,() => {
     console.warn('Name prefill incomplete. Missing in FORM_URL:', missing.join(', '));
     console.warn('In Google Forms choose Pre-fill form, enter FIRST_NAME and LAST_NAME in their answer boxes, then copy the generated link into .env and restart.');
   }
-  const addresses = host === '0.0.0.0' ? Object.values(networkInterfaces()).flat()
-    .filter(i => i.family === 'IPv4' && !i.internal).map(i => i.address) : [host];
-  for (const address of addresses) console.log('Quiz:', 'http://' + (address.includes(':') ? '['+address+']' : address) + ':' + port + classPath);
   console.log('Teacher report (local terminal): node server.mjs --report');
+  if (process.argv.includes('--local')) {
+    const addresses = host === '0.0.0.0' ? Object.values(networkInterfaces()).flat()
+      .filter(i => i.family === 'IPv4' && !i.internal).map(i => i.address) : [host];
+    for (const address of addresses) console.log('Quiz:', 'http://' + (address.includes(':') ? '['+address+']' : address) + ':' + port + classPath);
+    return;
+  }
+  startTunnel();
 });
+
+function startTunnel() {
+  const address = host === '0.0.0.0' ? '127.0.0.1' : host === '::' ? '::1' : host;
+  const origin = 'http://' + (address.includes(':') ? '[' + address + ']' : address) + ':' + port;
+  console.log('Starting Cloudflare Tunnel...');
+  const tunnel = spawn('cloudflared', ['tunnel', '--url', origin], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let stopping = false;
+  let publicURL;
+  let registered = false;
+  let announced = false;
+  function stop() {
+    stopping = true;
+    tunnel.kill('SIGTERM');
+    server.close();
+    server.closeAllConnections();
+  }
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+  for (const stream of [tunnel.stdout, tunnel.stderr]) {
+    createInterface({ input: stream }).on('line', line => {
+      const match = line.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com\b/i);
+      if (match) publicURL = match[0];
+      if (line.includes('Registered tunnel connection')) registered = true;
+      if (publicURL && registered && !announced) {
+        announced = true;
+        console.log('Public quiz:', publicURL);
+      }
+      if (/\b(ERR|WRN)\b/.test(line)) console.error(line);
+    });
+  }
+  tunnel.on('error', error => console.error('Cannot run cloudflared:', error.message,
+    'Install cloudflared or use --local.'));
+  tunnel.once('close', () => {
+    if (!stopping) {
+      console.error('Cloudflare Tunnel stopped. Restart the server to create a new public link.');
+      process.exitCode = 1;
+      server.close();
+      server.closeAllConnections();
+    }
+  });
+}
