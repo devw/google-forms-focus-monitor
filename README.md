@@ -31,6 +31,14 @@ node server.mjs --report
 
 The report is local to the teacher's machine. It groups events by student and attempt and includes UTC timestamps and hidden durations in milliseconds. Rerun the command to refresh it. The attempt column distinguishes reloads or repeated attempts by the same identifier.
 
+To start with an empty local report, finish any active attempts and close their tabs, then run:
+
+```sh
+node server.mjs --clear-report
+```
+
+This permanently clears all local events, participant details and imported email addresses. The class link and quiz configuration can be reused. Responses submitted to Google Forms are managed separately.
+
 ## Match names from submitted Google Forms responses
 
 Add a short-answer question titled `Monitor attempt` and generate a prefilled respondent URL with `MONITOR_ATTEMPT` as its sample answer. Leave personal information and quiz answers blank. Put the complete link in `FORM_URL`, restart the server, and use the newly printed class link. A plain URL supports anonymous monitoring but provides no join key for importing names.
