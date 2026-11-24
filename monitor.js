@@ -73,6 +73,15 @@ function recordEvent(type, durationMs) {
   }
 }
 
+let timerInterval;
+function updateCountdown() {
+  const seconds = Math.max(0, Math.ceil((session.deadline - Date.now()) / 1000));
+  const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const remainder = String(seconds % 60).padStart(2, "0");
+  el("countdown").textContent = seconds ? `Time left: ${minutes}:${remainder}` : "Time is up: 00:00";
+  if (!seconds) clearInterval(timerInterval);
+}
+
 async function enterFullscreen() {
   try {
     await document.documentElement.requestFullscreen();
@@ -130,7 +139,9 @@ el("setup").addEventListener("submit", event => {
     }
   }
   if (student) prefillStudentFields(url, details, student);
-  session = { events: [], student, details };
+  session = { events: [], student, details, deadline: Date.now() + Number(hosted.minutes || 15) * 60000 };
+  updateCountdown();
+  timerInterval = setInterval(updateCountdown, 1000);
   hiddenAt = null;
   recordEvent("Session started");
   url.searchParams.set("embedded", "true");
@@ -150,6 +161,7 @@ document.addEventListener("fullscreenchange", () => {
 
 document.addEventListener("visibilitychange", () => {
   if (!session) return;
+  if (!document.hidden) updateCountdown();
   if (document.hidden && hiddenAt === null) {
     hiddenAt = performance.now();
     recordEvent("Page hidden");
@@ -162,6 +174,7 @@ document.addEventListener("visibilitychange", () => {
 el("resume").addEventListener("click", enterFullscreen);
 el("finish").addEventListener("click", () => {
   if (!confirm("Finish monitoring? Submit your answers inside Google Forms first.")) return;
+  clearInterval(timerInterval);
   recordEvent("Session finished");
   const events = session.events;
   session = null;
