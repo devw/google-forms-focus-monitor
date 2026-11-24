@@ -79,6 +79,8 @@ const minutes = Number(minutesArg);
 if (!/^\d+$/.test(minutesArg || '') || minutes < 1 || !Number.isSafeInteger(minutes * 60000 + Date.now())) {
   fail('Use --minutes followed by a positive whole number, for example --minutes 30.');
 }
+const welcomeMessage = process.env.QUIZ_WELCOME_MESSAGE ??
+  "Enter your details and select Start quiz.<br>In Google Forms, check your prefilled details and select Next to begin the exercises.<br>Your teacher receives your details and a record of fullscreen changes and time spent away from the quiz tab.";
 const quizTitle = process.env.QUIZ_TITLE?.trim();
 const port = Number(process.env.PORT || 8000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) fail('PORT must be between 1 and 65535.');
@@ -162,7 +164,7 @@ const server = http.createServer(async (req,res) => {
     if (req.method === 'GET' && req.url === classPath) {
       const id = randomBytes(16).toString('hex');
       const page = template.replace('<main id="welcome">', () =>
-        '<main id="welcome" data-title="' + attr(quizTitle || '') + '" data-minutes="' + minutes + '" data-form="' + attr(form.href) + '" data-ticket="' + id + '.' + sign(classPath + id) + '">')
+        '<main id="welcome" data-message="' + attr(welcomeMessage) + '" data-title="' + attr(quizTitle || '') + '" data-minutes="' + minutes + '" data-form="' + attr(form.href) + '" data-ticket="' + id + '.' + sign(classPath + id) + '">')
         .replace('src="monitor.js"', 'src="/monitor.js"');
       return respond(res,200,page,'text/html; charset=utf-8');
     }
