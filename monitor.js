@@ -79,6 +79,8 @@ function updateCountdown() {
   const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
   const remainder = String(seconds % 60).padStart(2, "0");
   el("countdown").textContent = seconds ? `Time left: ${minutes}:${remainder}` : "Time is up: 00:00";
+  el("minute-hand").style.transform = `rotate(${(seconds % 3600) / 10}deg)`;
+  el("second-hand").style.transform = `rotate(${(seconds % 60) * 6}deg)`;
   if (!seconds) clearInterval(timerInterval);
 }
 
