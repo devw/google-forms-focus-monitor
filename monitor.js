@@ -10,6 +10,14 @@ if (hosted.ticket) {
   el("notice").textContent = "Your teacher receives your name and the fullscreen and visibility events for this attempt.";
   el("name-field").hidden = false;
   el("full-name").disabled = false;
+  const templateValues = [...new URL(hosted.form).searchParams.values()];
+  if (templateValues.includes("FIRST_NAME") && templateValues.includes("LAST_NAME")) {
+    const hint = document.createElement("small");
+    hint.id = "name-format";
+    hint.textContent = "For a compound name, separate given names and family name with a comma (e.g. Giuseppe Antonio, De Luca).";
+    el("full-name").after(hint);
+    el("full-name").setAttribute("aria-describedby", hint.id);
+  }
   el("form-choice").hidden = true;
   el("url").disabled = true;
   try {
@@ -74,6 +82,20 @@ async function enterFullscreen() {
   }
 }
 
+function prefillStudentFields(url, fullName, attempt) {
+  const parts = fullName.match(/^(.+?),\s*(.+)$/u) || fullName.match(/^(\S+)\s+(.+)$/u);
+  const values = new Map([
+    ["FIRST_NAME", parts ? parts[1].trim() : fullName],
+    ["LAST_NAME", parts ? parts[2].trim() : ""],
+    ["MONITOR_ATTEMPT", attempt]
+  ]);
+  for (const [key, marker] of [...url.searchParams]) {
+    if (!/^entry\.\d+$/.test(key)) continue;
+    if (values.has(marker)) url.searchParams.set(key, values.get(marker));
+    else url.searchParams.delete(key);
+  }
+}
+
 el("setup").addEventListener("submit", event => {
   event.preventDefault();
   const url = new URL(hosted.form || el("url").value);
@@ -88,13 +110,7 @@ el("setup").addEventListener("submit", event => {
     el("full-name").focus();
     return;
   }
-  if (student) {
-    for (const [key, value] of [...url.searchParams]) {
-      if (!/^entry\.\d+$/.test(key)) continue;
-      if (value === "MONITOR_ATTEMPT") url.searchParams.set(key, student);
-      else url.searchParams.delete(key);
-    }
-  }
+  if (student) prefillStudentFields(url, fullName, student);
   session = { events: [], student, fullName };
   hiddenAt = null;
   recordEvent("Session started");
