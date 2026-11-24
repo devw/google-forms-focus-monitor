@@ -166,7 +166,12 @@ const server = http.createServer(async (req,res) => {
     if (!res.headersSent) respond(res,500);
   }
 });
-server.on('error', e => fail(e.message));
+server.on('error', error => {
+  if (error.code === 'EADDRINUSE') {
+    fail('Port ' + port + ' is already in use. Stop the previous quiz server or choose another PORT in .env.');
+  }
+  fail(error.message);
+});
 server.listen(port,host,() => {
   const markers = new Set(identityFields.map(([, value]) => value));
   const missing = ['FIRST_NAME', 'LAST_NAME'].filter(marker => !markers.has(marker));
@@ -175,18 +180,24 @@ server.listen(port,host,() => {
     console.warn('In Google Forms choose Pre-fill form, enter FIRST_NAME and LAST_NAME in their answer boxes, then copy the generated link into .env and restart.');
   }
   console.log('Teacher report (local terminal): node server.mjs --report');
-  if (process.argv.includes('--local')) {
-    const addresses = host === '0.0.0.0' ? Object.values(networkInterfaces()).flat()
-      .filter(i => i.family === 'IPv4' && !i.internal).map(i => i.address) : [host];
-    for (const address of addresses) console.log('Quiz:', 'http://' + (address.includes(':') ? '['+address+']' : address) + ':' + port + classPath);
-    return;
-  }
-  startTunnel();
-});
-
-function startTunnel() {
   const address = host === '0.0.0.0' ? '127.0.0.1' : host === '::' ? '::1' : host;
   const origin = 'http://' + (address.includes(':') ? '[' + address + ']' : address) + ':' + port;
+  console.log('Local quiz:', origin);
+  if (host === '0.0.0.0') {
+    try {
+      for (const iface of Object.values(networkInterfaces()).flat()) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          console.log('LAN quiz:', 'http://' + iface.address + ':' + port);
+        }
+      }
+    } catch (error) {
+      console.warn('Could not list LAN addresses:', error.message);
+    }
+  }
+  if (!process.argv.includes('--local')) startTunnel(origin);
+});
+
+function startTunnel(origin) {
   console.log('Starting Cloudflare Tunnel...');
   const tunnel = spawn('cloudflared', ['tunnel', '--url', origin], { stdio: ['ignore', 'pipe', 'pipe'] });
   let stopping = false;
