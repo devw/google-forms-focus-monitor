@@ -13,7 +13,18 @@ input,button { font: inherit; border: 1px solid #758980; border-radius: .45rem; 
 input { width: 100%; margin: .4rem 0 1rem }
 button { background: #205844; color: white; cursor: pointer }
 button:focus-visible,input:focus-visible { outline: 3px solid #a46619; outline-offset: 3px }
-nav { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; padding: .6rem 1rem }
+nav { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: .65rem; padding: .6rem 1rem }
+.quiz-clock, .quiz-controls { display: flex; align-items: center; gap: .65rem }
+.quiz-clock { grid-column: 2; justify-self: center }
+.quiz-controls { grid-column: 3; justify-content: flex-end; flex-wrap: wrap }
+.clock-face { position: relative; width: 2.8rem; height: 2.8rem; border: 2px solid currentColor; border-radius: 50%; background: radial-gradient(circle, white 58%, transparent 60%), repeating-conic-gradient(currentColor 0deg 2deg, white 2deg 30deg) }
+.clock-face i { position: absolute; left: 50%; bottom: 50%; transform-origin: center bottom; border-radius: 2px }
+#minute-hand { width: 3px; height: 31%; margin-left: -1.5px; background: currentColor }
+#second-hand { width: 2px; height: 43%; margin-left: -1px; background: #b44828 }
+@media (max-width: 54rem) {
+  nav { grid-template-columns: 1fr }
+  .quiz-clock, .quiz-controls { grid-column: 1; justify-content: center }
+}
 #countdown { font-weight: 700; font-variant-numeric: tabular-nums }
 #delivery { position: fixed; right: 1rem; bottom: 0; background: #fff5d6; padding: .5rem 1rem; border-radius: .4rem }
 #exam { height: 100dvh; display: flex; flex-direction: column }
@@ -43,7 +54,13 @@ iframe { flex: 1; min-height: 0; width: 100%; border: 0; background: white }
 <p id="error" role="alert"></p>
 </main>
 <section id="exam" hidden aria-label="Quiz session">
-<nav><span id="countdown" role="timer"></span><span id="status" role="status"></span><button id="resume" hidden>Return to fullscreen</button><button id="finish">Finish session</button></nav>
+<nav>
+<div class="quiz-clock">
+  <span class="clock-face" aria-hidden="true"><i id="minute-hand"></i><i id="second-hand"></i></span>
+  <span id="countdown" role="timer"></span>
+</div>
+<div class="quiz-controls"><span id="status" role="status"></span><button id="resume" hidden>Return to fullscreen</button><button id="finish">Finish session</button></div>
+</nav>
 <iframe id="quiz" title="Google Forms quiz"></iframe>
 </section>
 <main id="summary" hidden><h1>Session log</h1><ol id="log"></ol><button id="again">Start another session</button></main>
