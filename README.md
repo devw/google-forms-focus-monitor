@@ -31,6 +31,12 @@ node server.mjs --report
 
 The report is local to the teacher's machine. It groups events by student and attempt and includes UTC timestamps and hidden durations in milliseconds. Rerun the command to refresh it. The attempt column distinguishes reloads or repeated attempts by the same identifier.
 
+## Collect the same personal details locally and in Google Forms
+
+In the form editor, choose **Pre-fill form**. In each short-answer identity question on the first section enter its label as a sample answer (for example, `Nome`, `Cognome`, `Matricola`). Leave all quiz answers empty. Generate the full prefilled link and paste it as the quoted value of `FORM_URL` in the local `.env`. Restart the server and distribute its newly printed class URL. Anyone updating from an earlier clone can keep the existing database and environment file.
+
+The local welcome page creates one required input per prefilled entry. Starting the session records those values in SQLite and substitutes them into the embedded form. The teacher report shows the full identity under `identity`. Google Forms stores its copy when the student submits the quiz. Students can review or edit prefilled answers inside Google Forms; subsequent edits do not update the local copy. Google's verified account-email collection is separate from these self-reported text fields. A plain respondent URL keeps the single student-code flow.
+
 ## Static demo
 
 Publish the repository on GitHub Pages or serve just the two frontend files locally:

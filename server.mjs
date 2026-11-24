@@ -12,6 +12,7 @@ mkdirSync(file('data/'), { recursive: true });
 const db = new DatabaseSync(file('data/monitor.sqlite'));
 db.exec(`PRAGMA journal_mode=WAL;
   CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  CREATE TABLE IF NOT EXISTS participants (attempt TEXT PRIMARY KEY, details TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS events (
     attempt TEXT NOT NULL, seq INTEGER NOT NULL, student TEXT NOT NULL,
     kind TEXT NOT NULL, observed TEXT NOT NULL, received TEXT NOT NULL,
@@ -19,8 +20,8 @@ db.exec(`PRAGMA journal_mode=WAL;
 chmodSync(file('data/monitor.sqlite'), 0o600);
 
 if (process.argv.includes('--report')) {
-  console.table(db.prepare(`SELECT student, attempt, seq, kind, observed, duration_ms
-    FROM events ORDER BY student, attempt, seq`).all());
+  console.table(db.prepare(`SELECT student, details AS identity, events.attempt, seq, kind, observed, duration_ms
+    FROM events LEFT JOIN participants USING (attempt) ORDER BY student, events.attempt, seq`).all());
   db.close();
   process.exit(0);
 }
@@ -29,6 +30,13 @@ function fail(message) { console.error(message); process.exit(1); }
 const form = URL.parse(process.env.FORM_URL || '');
 if (form?.origin !== 'https://docs.google.com' || !/^\/forms\/d\/(?:e\/)?[\w-]+\/viewform\/?$/.test(form.pathname))
   fail('Set FORM_URL in .env to the full Google Forms respondent link ending in /viewform.');
+// In the teacher's prefilled template each sample answer names its local input.
+const identityFields = [...form.searchParams].filter(([key]) => /^entry\.\d+$/.test(key));
+if (identityFields.length > 8 ||
+    new Set(identityFields.map(([key]) => key)).size !== identityFields.length ||
+    new Set(identityFields.map(([,label]) => label.trim())).size !== identityFields.length ||
+    identityFields.some(([,label]) => !label.trim() || label.length > 50 || /[\x00-\x1f\x7f-\x9f]/u.test(label)))
+  fail('Use distinct labels for up to eight short-answer identity fields in the prefilled URL.');
 const host = process.env.HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 8000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) fail('PORT must be between 1 and 65535.');
@@ -66,6 +74,14 @@ async function receive(req, res) {
       typeof event.timestamp !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(event.timestamp) ||
       !Number.isFinite(Date.parse(event.timestamp)) ||
       (event.type === 'Page visible again' && (!Number.isSafeInteger(event.durationMs) || event.durationMs < 0))) return respond(res,400);
+  if (identityFields.length && event.seq === 1) {
+    const values = event.identity;
+    if (event.type !== 'Session started' || !Array.isArray(values) || values.length !== identityFields.length ||
+        values.some(v => typeof v !== 'string' || !v.trim() || v.length > 80 || /[\x00-\x1f\x7f-\x9f]/u.test(v)) ||
+        values[0] !== event.student) return respond(res,400);
+    const details = Object.fromEntries(identityFields.map(([, label], i) => [label.trim(), values[i]]));
+    db.prepare('INSERT OR IGNORE INTO participants VALUES (?,?)').run(auth[1], JSON.stringify(details));
+  }
   insert.run(auth[1],event.seq,event.student,event.type,event.timestamp,new Date().toISOString(),
     event.type === 'Page visible again' ? event.durationMs : null);
   respond(res,204);
