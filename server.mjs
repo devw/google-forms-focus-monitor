@@ -12,6 +12,7 @@ mkdirSync(file('data/'), { recursive: true });
 const db = new DatabaseSync(file('data/monitor.sqlite'));
 db.exec(`PRAGMA journal_mode=WAL;
   CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  CREATE TABLE IF NOT EXISTS response_emails (attempt TEXT PRIMARY KEY, email TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS participants (attempt TEXT PRIMARY KEY, details TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS events (
     attempt TEXT NOT NULL, seq INTEGER NOT NULL, student TEXT NOT NULL,
@@ -20,10 +21,25 @@ db.exec(`PRAGMA journal_mode=WAL;
 chmodSync(file('data/monitor.sqlite'), 0o600);
 
 if (process.argv.includes('--report')) {
-  console.table(db.prepare(`SELECT student, details AS identity, events.attempt, seq, kind, observed, duration_ms
-    FROM events LEFT JOIN participants USING (attempt) ORDER BY student, events.attempt, seq`).all());
+  const rows = db.prepare(`SELECT e.*, p.details, r.email FROM events e
+    LEFT JOIN participants p USING (attempt) LEFT JOIN response_emails r USING (attempt)
+    ORDER BY student, attempt, seq`).all();
+  console.table(rows.map(reportRow));
   db.close();
   process.exit(0);
+}
+
+function reportRow(row) {
+  const profile = JSON.parse(row.details || '{}');
+  const fields = new Map(Object.entries(profile).map(([key, value]) => [key.trim().toLowerCase(), value]));
+  return {
+    email_google: row.email,
+    nome: fields.get('first name') ?? fields.get('nome') ?? null,
+    cognome: fields.get('last name') ?? fields.get('surname') ?? fields.get('cognome') ?? null,
+    student_id: fields.get('student id') ?? fields.get('matricola') ?? (row.details ? null : row.student),
+    attempt: row.attempt, seq: row.seq, kind: row.kind, observed: row.observed, duration_ms: row.duration_ms,
+    ...((row.details && [...fields.keys()].some(k => !['first name','nome','last name','surname','cognome','student id','matricola'].includes(k))) ? { other_details: row.details } : {})
+  };
 }
 
 function fail(message) { console.error(message); process.exit(1); }
@@ -31,7 +47,7 @@ const form = URL.parse(process.env.FORM_URL || '');
 if (form?.origin !== 'https://docs.google.com' || !/^\/forms\/d\/(?:e\/)?[\w-]+\/viewform\/?$/.test(form.pathname))
   fail('Set FORM_URL in .env to the full Google Forms respondent link ending in /viewform.');
 // In the teacher's prefilled template each sample answer names its local input.
-const identityFields = [...form.searchParams].filter(([key]) => /^entry\.\d+$/.test(key));
+const identityFields = [...form.searchParams].filter(([key, value]) => /^entry\.\d+$/.test(key) && value !== 'MONITOR_ATTEMPT');
 if (identityFields.length > 8 ||
     new Set(identityFields.map(([key]) => key)).size !== identityFields.length ||
     new Set(identityFields.map(([,label]) => label.trim())).size !== identityFields.length ||

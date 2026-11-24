@@ -10,7 +10,7 @@ const identityInputs = [];
 if (hosted.ticket) {
   el("notice").textContent = "Start the quiz in fullscreen. Your teacher receives your identifier, fullscreen changes, and the times this quiz page is hidden or visible. Google Forms collects your answers separately.";
   el("identity").hidden = false;
-  const fields = [...new URL(hosted.form).searchParams].filter(([key]) => /^entry\.\d+$/.test(key));
+  const fields = [...new URL(hosted.form).searchParams].filter(([key, value]) => /^entry\.\d+$/.test(key) && value !== 'MONITOR_ATTEMPT');
   if (fields.length) {
     el("notice").textContent = "Enter your details once. Your teacher's server saves them with the activity log. The same details appear in Google Forms for you to review and submit.";
     el("identity").replaceChildren();
@@ -103,6 +103,11 @@ el("setup").addEventListener("submit", event => {
   if (identity.some(value => !value || /[\x00-\x1f\x7f-\x9f]/u.test(value))) {
     el("error").textContent = "Complete each identity field before starting.";
     return;
+  }
+  if (hosted.ticket) {
+    for (const [key, value] of [...url.searchParams]) {
+      if (/^entry\.\d+$/.test(key) && value === "MONITOR_ATTEMPT") url.searchParams.set(key, hosted.ticket.split(".")[0]);
+    }
   }
   identityInputs.forEach((input, index) => url.searchParams.set(input.id, identity[index]));
   const student = identity[0] ?? el("student").value.trim();
