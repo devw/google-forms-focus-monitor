@@ -4,7 +4,7 @@ Run a Google Forms quiz in fullscreen and see when each student's quiz page was 
 
 ## Self-host a class session
 
-Install Node.js 24 or later on the teacher's computer. The server uses Node's built-in HTTP and SQLite modules.
+Install Node.js 24 or later on the teacher's computer. For public sessions, install the Cloudflare Tunnel client (on macOS, `brew install cloudflared`). The server uses Node's built-in HTTP and SQLite modules.
 
 ```sh
 git clone https://github.com/devw/google-forms-focus-monitor.git
@@ -18,7 +18,9 @@ Open `.env` in a text editor. Set `FORM_URL` to the full respondent link ending 
 node --env-file=.env server.mjs
 ```
 
-Open the **Quiz** URL printed in the terminal. In LAN mode, share the URL containing the teacher computer's classroom-network IP address. The computer must stay awake, the process must stay running, and the student network and firewall must allow connections to that port. Test from a student device before the quiz. For off-campus access, use a reachable HTTPS reverse proxy or an institutional VPN. Use HTTPS on shared networks to protect traffic in transit.
+The server starts a Cloudflare Quick Tunnel and prints **Public quiz** when the tunnel connects. Share that HTTPS URL with students. Keep the computer awake and the terminal open. Ctrl+C stops the server and tunnel. A new run creates a new public URL. Anyone with that URL can start a quiz attempt.
+
+For a local or LAN session, run `node --env-file=.env server.mjs --local`. Share the printed local URL with devices that can reach the configured host and port.
 
 1. Students open the class link, enter their given names in **First Name** and their family name in **Last Name**, and select **Start quiz**. The teacher report shows this self-reported name under `nome_completo` as soon as the start event reaches the server.
 2. The session continues after a fullscreen exit. Students can return to fullscreen without reloading the quiz.
