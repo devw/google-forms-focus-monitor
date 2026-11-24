@@ -11,10 +11,10 @@ if (hosted.ticket) {
     document.title = hosted.title;
     el("welcome").querySelector("h1").textContent = hosted.title;
   }
-  el("notice").textContent = "Enter your details and select Start quiz. In Google Forms, check the prefilled details, complete any required fields, then select Next to begin the exercises.";
-  const monitoringNotice = document.createElement("p");
-  monitoringNotice.textContent = "Your teacher receives your details and a record of fullscreen changes and time spent away from the quiz tab.";
-  el("notice").after(monitoringNotice);
+  const notice = el("notice");
+  notice.style.whiteSpace = "pre-line";
+  notice.textContent = hosted.message.replace(/<br\s*\/?\s*>/gi, "\n");
+  notice.hidden = !notice.textContent.trim();
   el("name-field").hidden = false;
   el("first-name").disabled = false;
   el("last-name").disabled = false;
