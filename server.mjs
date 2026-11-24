@@ -143,6 +143,12 @@ const server = http.createServer(async (req,res) => {
 });
 server.on('error', e => fail(e.message));
 server.listen(port,host,() => {
+  const markers = new Set(identityFields.map(([, value]) => value));
+  const missing = ['FIRST_NAME', 'LAST_NAME'].filter(marker => !markers.has(marker));
+  if (missing.length) {
+    console.warn('Name prefill incomplete. Missing in FORM_URL:', missing.join(', '));
+    console.warn('In Google Forms choose Pre-fill form, enter FIRST_NAME and LAST_NAME in their answer boxes, then copy the generated link into .env and restart.');
+  }
   const addresses = host === '0.0.0.0' ? Object.values(networkInterfaces()).flat()
     .filter(i => i.family === 'IPv4' && !i.internal).map(i => i.address) : [host];
   for (const address of addresses) console.log('Quiz:', 'http://' + (address.includes(':') ? '['+address+']' : address) + ':' + port + classPath);
