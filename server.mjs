@@ -36,7 +36,7 @@ function reportRow(row) {
     email_google: row.email,
     nome: fields.get('first name') ?? fields.get('nome') ?? null,
     cognome: fields.get('last name') ?? fields.get('surname') ?? fields.get('cognome') ?? null,
-    student_id: fields.get('student id') ?? fields.get('matricola') ?? (row.details ? null : row.student),
+    student_id: fields.get('student id') ?? fields.get('matricola') ?? (row.details || row.student === row.attempt ? null : row.student),
     attempt: row.attempt, seq: row.seq, kind: row.kind, observed: row.observed, duration_ms: row.duration_ms,
     ...((row.details && [...fields.keys()].some(k => !['first name','nome','last name','surname','cognome','student id','matricola'].includes(k))) ? { other_details: row.details } : {})
   };
@@ -90,7 +90,7 @@ async function receive(req, res) {
       typeof event.timestamp !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(event.timestamp) ||
       !Number.isFinite(Date.parse(event.timestamp)) ||
       (event.type === 'Page visible again' && (!Number.isSafeInteger(event.durationMs) || event.durationMs < 0))) return respond(res,400);
-  if (identityFields.length && event.seq === 1) {
+  if (identityFields.length && event.seq === 1 && event.student !== auth[1]) {
     const values = event.identity;
     if (event.type !== 'Session started' || !Array.isArray(values) || values.length !== identityFields.length ||
         values.some(v => typeof v !== 'string' || !v.trim() || v.length > 80 || /[\x00-\x1f\x7f-\x9f]/u.test(v)) ||

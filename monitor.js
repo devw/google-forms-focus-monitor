@@ -6,28 +6,8 @@ const storageKey = "focus-monitor:pending:" + location.pathname;
 let pending = [];
 let sending = false;
 let storageAvailable = true;
-const identityInputs = [];
 if (hosted.ticket) {
-  el("notice").textContent = "Start the quiz in fullscreen. Your teacher receives your identifier, fullscreen changes, and the times this quiz page is hidden or visible. Google Forms collects your answers separately.";
-  el("identity").hidden = false;
-  const fields = [...new URL(hosted.form).searchParams].filter(([key, value]) => /^entry\.\d+$/.test(key) && value !== 'MONITOR_ATTEMPT');
-  if (fields.length) {
-    el("notice").textContent = "Enter your details once. Your teacher's server saves them with the activity log. The same details appear in Google Forms for you to review and submit.";
-    el("identity").replaceChildren();
-    for (const [key, labelText] of fields) {
-      const label = document.createElement("label");
-      const input = document.createElement("input");
-      input.id = key;
-      input.required = true;
-      input.maxLength = 80;
-      label.htmlFor = key;
-      label.textContent = labelText.trim();
-      el("identity").append(label, input);
-      identityInputs.push(input);
-    }
-  } else {
-    el("student").required = true;
-  }
+  el("notice").textContent = "Start in fullscreen. The monitor records fullscreen and page visibility changes. Enter your name in Google Forms. After submission your teacher can match the response to this session.";
   el("form-choice").hidden = true;
   el("url").disabled = true;
   try {
@@ -74,7 +54,6 @@ if (sharedForm) el("url").value = sharedForm;
 function recordEvent(type, durationMs) {
   const event = { type, timestamp: new Date().toISOString() };
   if (durationMs !== undefined) event.durationMs = durationMs;
-  if (type === "Session started" && session.identity.length) event.identity = session.identity;
   session.events.push(event);
   if (hosted.ticket) {
     pending.push({ ticket: hosted.ticket, event: { ...event, student: session.student, seq: session.events.length } });
@@ -99,23 +78,15 @@ el("setup").addEventListener("submit", event => {
     el("error").textContent = "Paste the full docs.google.com respondent link ending in /viewform.";
     return;
   }
-  const identity = identityInputs.map(input => input.value.trim());
-  if (identity.some(value => !value || /[\x00-\x1f\x7f-\x9f]/u.test(value))) {
-    el("error").textContent = "Complete each identity field before starting.";
-    return;
-  }
-  if (hosted.ticket) {
+  const student = hosted.ticket?.split(".")[0];
+  if (student) {
     for (const [key, value] of [...url.searchParams]) {
-      if (/^entry\.\d+$/.test(key) && value === "MONITOR_ATTEMPT") url.searchParams.set(key, hosted.ticket.split(".")[0]);
+      if (!/^entry\.\d+$/.test(key)) continue;
+      if (value === "MONITOR_ATTEMPT") url.searchParams.set(key, student);
+      else url.searchParams.delete(key);
     }
   }
-  identityInputs.forEach((input, index) => url.searchParams.set(input.id, identity[index]));
-  const student = identity[0] ?? el("student").value.trim();
-  if (hosted.ticket && (!student || /[\u0000-\u001f\u007f-\u009f]/u.test(student))) {
-    el("error").textContent = "Enter a valid student identifier.";
-    return;
-  }
-  session = { events: [], student, identity };
+  session = { events: [], student };
   hiddenAt = null;
   recordEvent("Session started");
   url.searchParams.set("embedded", "true");

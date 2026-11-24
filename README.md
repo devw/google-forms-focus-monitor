@@ -20,7 +20,7 @@ node --env-file=.env server.mjs
 
 Open the **Quiz** URL printed in the terminal. In LAN mode, share the URL containing the teacher computer's classroom-network IP address. The computer must stay awake, the process must stay running, and the student network and firewall must allow connections to that port. Test from a student device before the quiz. For off-campus access, use a reachable HTTPS reverse proxy or an institutional VPN. Use HTTPS on shared networks to protect traffic in transit.
 
-1. Students open the class link, enter their assigned identifier and select **Start quiz**. The welcome screen explains which events will reach the teacher. An identifier is self-reported.
+1. Students open the class link and select **Start quiz**. They enter their personal details only in Google Forms.
 2. The session continues after a fullscreen exit. Students can return to fullscreen without reloading the quiz.
 3. Students submit their answers inside Google Forms, then select **Finish session** to end monitoring. They can see their own event timeline.
 4. The teacher can read all received events at any time in a second terminal on the host:
@@ -31,24 +31,18 @@ node server.mjs --report
 
 The report is local to the teacher's machine. It groups events by student and attempt and includes UTC timestamps and hidden durations in milliseconds. Rerun the command to refresh it. The attempt column distinguishes reloads or repeated attempts by the same identifier.
 
-## Collect the same personal details locally and in Google Forms
+## Match names from submitted Google Forms responses
 
-In the form editor, choose **Pre-fill form**. In each short-answer identity question on the first section enter its label as a sample answer (for example, `Nome`, `Cognome`, `Matricola`). Leave all quiz answers empty. Generate the full prefilled link and paste it as the quoted value of `FORM_URL` in the local `.env`. Restart the server and distribute its newly printed class URL. Anyone updating from an earlier clone can keep the existing database and environment file.
+Add a short-answer question titled `Monitor attempt` and generate a prefilled respondent URL with `MONITOR_ATTEMPT` as its sample answer. Leave personal information and quiz answers blank. Put the complete link in `FORM_URL`, restart the server, and use the newly printed class link. A plain URL supports anonymous monitoring but provides no join key for importing names.
 
-The local welcome page creates one required input per prefilled entry. Starting the session records those values in SQLite and substitutes them into the embedded form. Use `First Name`, `Last Name`, and `Student ID` as the sample answers for those three questions. The report displays them as `nome`, `cognome`, and `student_id`. Older ID-only attempts retain their original identifier. Google Forms stores its copy when the student submits the quiz. Students can review or edit prefilled answers inside Google Forms; subsequent edits do not update the local copy. Google's verified account-email collection is separate from these self-reported text fields. A plain respondent URL keeps the single student-code flow.
-
-### Google account email in the teacher report
-
-For a verified address, configure **Collect email addresses → Verified** in Google Forms. Add an optional short-answer question titled `Monitor attempt`. In the prefilled template, enter `MONITOR_ATTEMPT` for this question. Keep the three personal information placeholders above. Paste the new full URL into `.env` and restart the server. The monitor fills the attempt code automatically. Leave any ExtendedForms ID blank in the template; the add-on owns that field.
-
-After submission, export the responses from Google Forms as CSV and unzip the download if needed. Keep this file outside the public repository. Import it into the local database with Python 3:
+The monitor prefills the attempt code. Students enter First Name, Last Name and Student ID once inside Google Forms. After submission, download the response CSV, unzip it, and run:
 
 ```sh
-python3 import_responses.py ~/Downloads/responses.csv --email-column "Email Address"
+python3 import_responses.py ~/Downloads/responses.csv
 node server.mjs --report
 ```
 
-Use the actual CSV header, such as `Indirizzo email`, for the collected address. The `email_google` column is populated after import. Each match requires one exact attempt code. Edited, missing, conflicting or ambiguous identifiers may prevent a match. The importer trusts the selected CSV column; verify the form's email-collection setting before treating an address as verified. A requested sign-in alone does not expose an account in the embedded page.
+The importer matches the exact attempt code and reads available identity columns. Email is optional. Override headers with `--first-name-column`, `--last-name-column`, `--student-id-column`, `--email-column` or `--attempt-column` if they differ. Before import, events appear under the generated attempt code. Duplicate or unknown codes are skipped. Keep the CSV outside the repository.
 
 ## Static demo
 
