@@ -47,12 +47,13 @@ function reportRow(row) {
   const profile = JSON.parse(row.details || '{}');
   const fields = new Map(Object.entries(profile).map(([key, value]) => [key.trim().toLowerCase(), value]));
   return {
+    nome_completo: fields.get("full name") ?? null,
     email_google: row.email,
     nome: fields.get('first name') ?? fields.get('nome') ?? null,
     cognome: fields.get('last name') ?? fields.get('surname') ?? fields.get('cognome') ?? null,
     student_id: fields.get('student id') ?? fields.get('matricola') ?? (row.details || row.student === row.attempt ? null : row.student),
     attempt: row.attempt, seq: row.seq, kind: row.kind, observed: row.observed, duration_ms: row.duration_ms,
-    ...((row.details && [...fields.keys()].some(k => !['first name','nome','last name','surname','cognome','student id','matricola'].includes(k))) ? { other_details: row.details } : {})
+    ...((row.details && [...fields.keys()].some(k => !['full name','first name','nome','last name','surname','cognome','student id','matricola'].includes(k))) ? { other_details: row.details } : {})
   };
 }
 
@@ -104,6 +105,12 @@ async function receive(req, res) {
       typeof event.timestamp !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(event.timestamp) ||
       !Number.isFinite(Date.parse(event.timestamp)) ||
       (event.type === 'Page visible again' && (!Number.isSafeInteger(event.durationMs) || event.durationMs < 0))) return respond(res,400);
+  if (event.fullName !== undefined) {
+    if (event.seq !== 1 || event.type !== 'Session started' || event.student !== auth[1] ||
+        typeof event.fullName !== 'string' || !event.fullName.trim() || event.fullName.length > 160 ||
+        /[\x00-\x1f\x7f-\x9f]/u.test(event.fullName)) return respond(res,400);
+    db.prepare('INSERT OR IGNORE INTO participants VALUES (?,?)').run(auth[1], JSON.stringify({'Full name': event.fullName.trim()}));
+  }
   if (identityFields.length && event.seq === 1 && event.student !== auth[1]) {
     const values = event.identity;
     if (event.type !== 'Session started' || !Array.isArray(values) || values.length !== identityFields.length ||

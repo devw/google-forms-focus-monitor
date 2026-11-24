@@ -7,7 +7,9 @@ let pending = [];
 let sending = false;
 let storageAvailable = true;
 if (hosted.ticket) {
-  el("notice").textContent = "Start in fullscreen. The monitor records fullscreen and page visibility changes. Enter your name in Google Forms. After submission your teacher can match the response to this session.";
+  el("notice").textContent = "Your teacher receives your name and the fullscreen and visibility events for this attempt.";
+  el("name-field").hidden = false;
+  el("full-name").disabled = false;
   el("form-choice").hidden = true;
   el("url").disabled = true;
   try {
@@ -54,6 +56,7 @@ if (sharedForm) el("url").value = sharedForm;
 function recordEvent(type, durationMs) {
   const event = { type, timestamp: new Date().toISOString() };
   if (durationMs !== undefined) event.durationMs = durationMs;
+  if (type === "Session started" && hosted.ticket) event.fullName = session.fullName;
   session.events.push(event);
   if (hosted.ticket) {
     pending.push({ ticket: hosted.ticket, event: { ...event, student: session.student, seq: session.events.length } });
@@ -79,6 +82,12 @@ el("setup").addEventListener("submit", event => {
     return;
   }
   const student = hosted.ticket?.split(".")[0];
+  const fullName = hosted.ticket ? el("full-name").value.trim() : "";
+  if (hosted.ticket && (!fullName || /[\x00-\x1f\x7f-\x9f]/u.test(fullName))) {
+    el("error").textContent = "Enter your first and last name.";
+    el("full-name").focus();
+    return;
+  }
   if (student) {
     for (const [key, value] of [...url.searchParams]) {
       if (!/^entry\.\d+$/.test(key)) continue;
@@ -86,7 +95,7 @@ el("setup").addEventListener("submit", event => {
       else url.searchParams.delete(key);
     }
   }
-  session = { events: [], student };
+  session = { events: [], student, fullName };
   hiddenAt = null;
   recordEvent("Session started");
   url.searchParams.set("embedded", "true");

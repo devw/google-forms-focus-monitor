@@ -20,7 +20,7 @@ node --env-file=.env server.mjs
 
 Open the **Quiz** URL printed in the terminal. In LAN mode, share the URL containing the teacher computer's classroom-network IP address. The computer must stay awake, the process must stay running, and the student network and firewall must allow connections to that port. Test from a student device before the quiz. For off-campus access, use a reachable HTTPS reverse proxy or an institutional VPN. Use HTTPS on shared networks to protect traffic in transit.
 
-1. Students open the class link and select **Start quiz**. They enter their personal details only in Google Forms.
+1. Students open the class link, enter their first and last name in one field (for example, Mark Smith), and select **Start quiz**. The teacher report shows this self-reported name under `nome_completo` as soon as the start event reaches the server.
 2. The session continues after a fullscreen exit. Students can return to fullscreen without reloading the quiz.
 3. Students submit their answers inside Google Forms, then select **Finish session** to end monitoring. They can see their own event timeline.
 4. The teacher can read all received events at any time in a second terminal on the host:
@@ -41,7 +41,7 @@ This permanently clears all local events, participant details and imported email
 
 ## Match names from submitted Google Forms responses
 
-Add a short-answer question titled `Monitor attempt` and generate a prefilled respondent URL with `MONITOR_ATTEMPT` as its sample answer. Leave personal information and quiz answers blank. Put the complete link in `FORM_URL`, restart the server, and use the newly printed class link. A plain URL supports anonymous monitoring but provides no join key for importing names.
+Add a short-answer question titled `Monitor attempt` and generate a prefilled respondent URL with `MONITOR_ATTEMPT` as its sample answer. Leave personal information and quiz answers blank. Put the complete link in `FORM_URL`, restart the server, and use the newly printed class link. A plain URL supports the live named report. Use the prefilled attempt code for exact matching with submitted answers.
 
 The monitor prefills the attempt code. Students enter First Name, Last Name and Student ID once inside Google Forms. After submission, download the response CSV, unzip it, and run:
 
@@ -50,7 +50,7 @@ python3 import_responses.py ~/Downloads/responses.csv
 node server.mjs --report
 ```
 
-The importer matches the exact attempt code and reads available identity columns. Email is optional. Override headers with `--first-name-column`, `--last-name-column`, `--student-id-column`, `--email-column` or `--attempt-column` if they differ. Before import, events appear under the generated attempt code. Duplicate or unknown codes are skipped. Keep the CSV outside the repository.
+The importer matches the exact attempt code and reads available identity columns. Email is optional. Override headers with `--first-name-column`, `--last-name-column`, `--student-id-column`, `--email-column` or `--attempt-column` if they differ. Before import, new hosted attempts show the name entered on the welcome screen alongside the generated attempt code. Duplicate or unknown codes are skipped. Keep the CSV outside the repository.
 
 ## Static demo
 
