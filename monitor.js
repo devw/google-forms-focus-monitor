@@ -7,10 +7,16 @@ let pending = [];
 let sending = false;
 let storageAvailable = true;
 if (hosted.ticket) {
-  el("notice").textContent = "Your teacher receives your name and the fullscreen and visibility events for this attempt.";
+  el("notice").textContent = "Your teacher receives your entered details and the fullscreen and visibility events for this attempt.";
   el("name-field").hidden = false;
   el("full-name").disabled = false;
-  const templateValues = [...new URL(hosted.form).searchParams.values()];
+  const params = new URL(hosted.form).searchParams;
+  const templateValues = [...params].filter(([key]) => /^entry\.\d+$/.test(key)).map(([, value]) => value);
+  const emailConfigured = templateValues.includes("student@example.com") || params.get("emailAddress") === "student@example.com";
+  for (const [id, enabled] of [["email", emailConfigured], ["student-id", templateValues.includes("STUDENT_ID")]]) {
+    el(id).disabled = !enabled;
+    el(id + "-field").hidden = !enabled;
+  }
   if (templateValues.includes("FIRST_NAME") && templateValues.includes("LAST_NAME")) {
     const hint = document.createElement("small");
     hint.id = "name-format";
@@ -64,7 +70,7 @@ if (sharedForm) el("url").value = sharedForm;
 function recordEvent(type, durationMs) {
   const event = { type, timestamp: new Date().toISOString() };
   if (durationMs !== undefined) event.durationMs = durationMs;
-  if (type === "Session started" && hosted.ticket) event.fullName = session.fullName;
+  if (type === "Session started" && hosted.ticket) Object.assign(event, session.details);
   session.events.push(event);
   if (hosted.ticket) {
     pending.push({ ticket: hosted.ticket, event: { ...event, student: session.student, seq: session.events.length } });
@@ -82,14 +88,17 @@ async function enterFullscreen() {
   }
 }
 
-function prefillStudentFields(url, fullName, attempt) {
+function prefillStudentFields(url, { fullName, email, studentId }, attempt) {
   const parts = fullName.match(/^(.+?),\s*(.+)$/u) || fullName.match(/^(\S+)\s+(.+)$/u);
   const values = new Map([
     ["FIRST_NAME", parts ? parts[1].trim() : fullName],
     ["LAST_NAME", parts ? parts[2].trim() : ""],
+    ["STUDENT_ID", studentId],
+    ["student@example.com", email],
     ["MONITOR_ATTEMPT", attempt]
   ]);
   for (const [key, marker] of [...url.searchParams]) {
+    if (key === "emailAddress" && marker === "student@example.com") url.searchParams.set(key, email);
     if (!/^entry\.\d+$/.test(key)) continue;
     if (values.has(marker)) url.searchParams.set(key, values.get(marker));
     else url.searchParams.delete(key);
@@ -110,8 +119,18 @@ el("setup").addEventListener("submit", event => {
     el("full-name").focus();
     return;
   }
-  if (student) prefillStudentFields(url, fullName, student);
-  session = { events: [], student, fullName };
+  const details = { fullName };
+  if (!el("email").disabled) details.email = el("email").value.trim();
+  if (!el("student-id").disabled) {
+    details.studentId = el("student-id").value.trim();
+    if (!details.studentId || /[\x00-\x1f\x7f-\x9f]/u.test(details.studentId)) {
+      el("error").textContent = "Enter your student ID.";
+      el("student-id").focus();
+      return;
+    }
+  }
+  if (student) prefillStudentFields(url, details, student);
+  session = { events: [], student, details };
   hiddenAt = null;
   recordEvent("Session started");
   url.searchParams.set("embedded", "true");

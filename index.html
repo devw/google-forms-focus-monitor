@@ -31,6 +31,10 @@ iframe { flex: 1; min-height: 0; width: 100%; border: 0; background: white }
 <label for="full-name">First and last name</label>
 <input id="full-name" name="fullName" autocomplete="name" maxlength="160" placeholder="Mark Smith" disabled required>
 </div>
+<div id="email-field" hidden><label for="email">Email</label>
+<input id="email" type="email" autocomplete="email" maxlength="254" disabled required></div>
+<div id="student-id-field" hidden><label for="student-id">Student ID</label>
+<input id="student-id" type="text" maxlength="80" autocomplete="off" disabled required></div>
 <button>Start quiz</button>
 </form>
 <p id="error" role="alert"></p>
