@@ -20,6 +20,20 @@ db.exec(`PRAGMA journal_mode=WAL;
     duration_ms INTEGER, PRIMARY KEY (attempt, seq));`);
 chmodSync(file('data/monitor.sqlite'), 0o600);
 
+if (process.argv.slice(2).join(' ') === '--clear-report') {
+  try {
+    db.exec(`BEGIN IMMEDIATE;
+      DELETE FROM response_emails;
+      DELETE FROM participants;
+      DELETE FROM events;
+      COMMIT;`);
+  } finally {
+    db.close();
+  }
+  console.log('Local report cleared.');
+  process.exit(0);
+}
+
 if (process.argv.includes('--report')) {
   const rows = db.prepare(`SELECT e.*, p.details, r.email FROM events e
     LEFT JOIN participants p USING (attempt) LEFT JOIN response_emails r USING (attempt)
