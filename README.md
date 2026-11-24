@@ -12,7 +12,7 @@ cd google-forms-focus-monitor
 cp .env.example .env
 ```
 
-Open `.env` in a text editor. Set `FORM_URL` to the full respondent link ending in `/viewform`. For a local trial, leave `HOST=127.0.0.1`. For a classroom on your network, set `HOST=0.0.0.0`. Set `PORT` to an available port (default 8000). Then run:
+Open `.env` in a text editor. Set `FORM_URL` to the full respondent link ending in `/viewform`. Set `QUIZ_TITLE="DBMS Final Exam"` to customize the welcome heading and browser tab title (default `Fullscreen Exam`). For a local trial, leave `HOST=127.0.0.1`. For a classroom on your network, set `HOST=0.0.0.0`. Set `PORT` to an available port (default 8000). Then run:
 
 ```sh
 node --env-file=.env server.mjs
