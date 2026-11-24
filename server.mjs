@@ -145,6 +145,10 @@ async function receive(req, res) {
 
 const server = http.createServer(async (req,res) => {
   try {
+    if (req.method === 'GET' && req.url === '/') {
+      res.writeHead(302, { Location: classPath, 'Cache-Control': 'no-store' });
+      return res.end();
+    }
     if (req.method === 'GET' && req.url === classPath) {
       const id = randomBytes(16).toString('hex');
       const page = template.replace('<main id="welcome">', () =>
