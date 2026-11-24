@@ -39,11 +39,15 @@ node server.mjs --clear-report
 
 This permanently clears all local events, participant details and imported email addresses. The class link and quiz configuration can be reused. Responses submitted to Google Forms are managed separately.
 
+## Prefill the student name in Google Forms
+
+In the Google Forms editor, choose **Pre-fill form**. Type `FIRST_NAME` into the First Name answer and `LAST_NAME` into Last Name. Copy the generated full link to `FORM_URL` in your local `.env`, restart the server, and distribute the printed class URL. The monitor substitutes the student's name before opening the embedded form. The student can review both answers. With a space-separated name the first word fills First Name and the remaining words fill Last Name. A comma sets an explicit boundary, as in `Giuseppe Antonio, De Luca`.
+
 ## Match names from submitted Google Forms responses
 
-Add a short-answer question titled `Monitor attempt` and generate a prefilled respondent URL with `MONITOR_ATTEMPT` as its sample answer. Leave personal information and quiz answers blank. Put the complete link in `FORM_URL`, restart the server, and use the newly printed class link. A plain URL supports the live named report. Use the prefilled attempt code for exact matching with submitted answers.
+Add a short-answer question titled `Monitor attempt` and generate a prefilled respondent URL with `MONITOR_ATTEMPT` as its sample answer. Keep the two name markers if desired and leave other answers blank. Put the complete link in `FORM_URL`, restart the server, and use the newly printed class link. A plain URL supports the live named report. Use the prefilled attempt code for exact matching with submitted answers.
 
-The monitor prefills the attempt code. Students enter First Name, Last Name and Student ID once inside Google Forms. After submission, download the response CSV, unzip it, and run:
+The monitor prefills the attempt code. Students review their prefilled names and enter their Student ID in Google Forms. After submission, download the response CSV, unzip it, and run:
 
 ```sh
 python3 import_responses.py ~/Downloads/responses.csv
