@@ -88,7 +88,18 @@ db.prepare("INSERT OR IGNORE INTO settings VALUES ('secret', ?)").run(randomByte
 const secret = db.prepare("SELECT value FROM settings WHERE key='secret'").get().value;
 const sign = text => createHmac('sha256', secret).update(text).digest('hex');
 const classPath = '/q/' + sign('class:' + form.href).slice(0,32);
-const template = readFileSync(file('index.html'), 'utf8');
+function enabled(name) {
+  const value = (process.env[name] ?? 'true').trim().toLowerCase();
+  if (value !== 'true' && value !== 'false') fail(name + ' must be true or false.');
+  return value === 'true';
+}
+let template = readFileSync(file('index.html'), 'utf8');
+if (!enabled('SHOW_SESSION_LOG')) {
+  template = template.replace('<h1>Session log</h1><ol id="log"></ol>', '<h1>Session finished</h1>');
+}
+if (!enabled('SHOW_RESTART_BUTTON')) {
+  template = template.replace('<button id="again">Start another session</button>', '');
+}
 const script = readFileSync(file('monitor.js'));
 const allowed = new Set(['Session started','Entered fullscreen','Exited fullscreen','Page hidden','Page visible again','Session finished','Page closed']);
 const insert = db.prepare('INSERT INTO events VALUES (?,?,?,?,?,?,?) ON CONFLICT(attempt,seq) DO NOTHING');
