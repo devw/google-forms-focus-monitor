@@ -166,6 +166,13 @@ document.addEventListener("fullscreenchange", () => {
   el("resume").hidden = full;
   el("status").textContent = full ? "Fullscreen active" : "Fullscreen exited";
   recordEvent(full ? "Entered fullscreen" : "Exited fullscreen");
+  const warning = el("exit-warning");
+  warning.hidden = full;
+  if (!full) {
+    warning.textContent = hosted.ticket
+      ? "You have left fullscreen. Your instructor can review this event and may take it into account when grading. Select Return to fullscreen to continue."
+      : "You have left fullscreen. This event is recorded in your session log. Select Return to fullscreen to continue.";
+  }
 });
 
 document.addEventListener("visibilitychange", () => {
