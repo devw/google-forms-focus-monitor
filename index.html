@@ -51,6 +51,7 @@ iframe { flex: 1; min-height: 0; width: 100%; border: 0; background: white }
 <input id="email" type="email" autocomplete="email" placeholder="Enter your email address" maxlength="254" disabled required></div>
 <div id="student-id-field" hidden><label for="student-id">Student ID</label>
 <input id="student-id" placeholder="Enter your student ID as registered with the university" type="text" maxlength="80" autocomplete="off" disabled required></div>
+<p id="fullscreen-reminder" hidden>Please stay in fullscreen during the quiz. Your instructor can review fullscreen exits and may take them into account when grading. If you exit by mistake, select <strong>Return to fullscreen</strong>.</p>
 <button>Start quiz</button>
 </form>
 <p id="error" role="alert"></p>
@@ -61,9 +62,12 @@ iframe { flex: 1; min-height: 0; width: 100%; border: 0; background: white }
   <span class="clock-face" aria-hidden="true"><i id="minute-hand"></i><i id="second-hand"></i></span>
   <span id="countdown" role="timer"></span>
 </div>
-<div class="quiz-controls"><span id="status" role="status"></span><button id="resume" hidden>Return to fullscreen</button><button id="finish">Finish session</button></div>
+<div class="quiz-controls"><span id="status" role="status"></span><button id="finish">Finish session</button></div>
 </nav>
-<p id="exit-warning" role="alert" hidden></p>
+<div id="exit-warning" hidden>
+  <span id="exit-message" role="alert"></span>
+  <button type="button" id="resume">Return to fullscreen</button>
+</div>
 <iframe id="quiz" title="Google Forms quiz"></iframe>
 </section>
 <main id="summary" hidden><h1>Session log</h1><ol id="log"></ol><button id="again">Start another session</button></main>
