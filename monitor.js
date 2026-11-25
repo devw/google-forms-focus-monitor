@@ -188,7 +188,7 @@ el("finish").addEventListener("click", () => {
   const events = session.events;
   session = null;
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  el("log").replaceChildren(...events.map(event => {
+  el("log")?.replaceChildren(...events.map(event => {
     const item = document.createElement("li");
     const duration = event.durationMs === undefined ? "" : " (" + (event.durationMs / 1000).toFixed(1) + " s hidden)";
     item.textContent = event.timestamp + " — " + event.type + duration;
@@ -198,7 +198,7 @@ el("finish").addEventListener("click", () => {
   el("quiz").removeAttribute("src");
   el("summary").hidden = false;
 });
-el("again").addEventListener("click", () => location.reload());
+el("again")?.addEventListener("click", () => location.reload());
 
 window.addEventListener("pagehide", event => {
   if (hosted.ticket && session && !event.persisted) recordEvent("Page closed");
