@@ -28,7 +28,7 @@ For a local or LAN session, run `node --env-file=.env server.mjs --local`. Share
 
 1. Students open the class link, enter their given names in **First Name** and their family name in **Last Name**, and select **Start quiz**. The teacher report shows this self-reported name under `nome_completo` as soon as the start event reaches the server.
 2. The session continues after a fullscreen exit. Students can return to fullscreen without reloading the quiz.
-3. Students submit their answers inside Google Forms, then select **Finish session** to end monitoring. They can see their own event timeline.
+3. Students submit their answers inside Google Forms, then select **Finish session** to end monitoring. By default students see their event timeline and a **Start another session** button. In `.env`, set `SHOW_SESSION_LOG=false` to hide the timeline or `SHOW_RESTART_BUTTON=false` to hide the button. Both settings apply independently to the hosted finish screen. The teacher can still view all recorded events.
 4. The teacher can read all received events at any time in a second terminal on the host:
 
 ```sh
