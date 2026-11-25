@@ -20,7 +20,24 @@ node --env-file=.env server.mjs
 
 Set `QUIZ_WELCOME_MESSAGE` in `.env` to replace the entire hosted welcome message, including the monitoring notice. Use `<br>` for a line break or `<br><br>` for a blank line. Restart the server after editing the file.
 
-The countdown starts individually when a student selects **Start quiz** and defaults to 15 minutes. To allow 30 minutes, run `node --env-file=.env server.mjs --minutes 30`. At zero, the clock displays **Time is up** and the student can still submit the form.
+### Countdown and command-line options
+
+For a 30-minute exam, start the server with this command:
+
+```sh
+node --env-file=.env server.mjs --minutes 30
+```
+
+Replace `30` with a positive whole number of minutes. Omitting `--minutes` gives each student 15 minutes. The countdown starts when the student selects **Start quiz**. At zero, the clock displays **Time is up** and the student can still submit the form.
+
+| Option | Example command | Effect |
+| --- | --- | --- |
+| `--minutes N` | `node --env-file=.env server.mjs --minutes 25` | Start a public quiz with a 25-minute countdown. |
+| `--local` | `node --env-file=.env server.mjs --local --minutes 25` | Run the quiz on the configured host and port without starting Cloudflare. |
+| `--report` | `node server.mjs --report` | Print the local event report and exit. |
+| `--clear-report` | `node server.mjs --clear-report` | Permanently clear the local report and exit. |
+
+### Running a class session
 
 The server starts a Cloudflare Quick Tunnel and prints **Public quiz** when the tunnel connects. Share that HTTPS URL with students. Keep the computer awake and the terminal open. Ctrl+C stops the server and tunnel. A new run creates a new public URL. Anyone with that URL can start a quiz attempt.
 
