@@ -27,6 +27,7 @@ nav { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); 
   nav { grid-template-columns: 1fr }
   .quiz-clock, .quiz-controls { grid-column: 1; justify-content: center }
 }
+#exit-warning { margin: 0; padding: .7rem 1rem; border-block-start: 2px solid #ad620f; background: #fff2d6; color: #512e08; text-align: center }
 #countdown { font-weight: 700; font-variant-numeric: tabular-nums }
 #delivery { position: fixed; right: 1rem; bottom: 0; background: #fff5d6; padding: .5rem 1rem; border-radius: .4rem }
 #exam { height: 100dvh; display: flex; flex-direction: column }
@@ -62,6 +63,7 @@ iframe { flex: 1; min-height: 0; width: 100%; border: 0; background: white }
 </div>
 <div class="quiz-controls"><span id="status" role="status"></span><button id="resume" hidden>Return to fullscreen</button><button id="finish">Finish session</button></div>
 </nav>
+<p id="exit-warning" role="alert" hidden></p>
 <iframe id="quiz" title="Google Forms quiz"></iframe>
 </section>
 <main id="summary" hidden><h1>Session log</h1><ol id="log"></ol><button id="again">Start another session</button></main>
