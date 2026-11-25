@@ -7,6 +7,7 @@ let pending = [];
 let sending = false;
 let storageAvailable = true;
 if (hosted.ticket) {
+  el("fullscreen-reminder").hidden = false;
   if (hosted.title) {
     document.title = hosted.title;
     el("welcome").querySelector("h1").textContent = hosted.title;
@@ -96,7 +97,11 @@ async function enterFullscreen() {
     await document.documentElement.requestFullscreen();
   } catch {
     el("status").textContent = "Fullscreen unavailable. The quiz can continue.";
-    el("resume").hidden = false;
+    if (!session) return;
+    if (el("exit-warning").hidden) {
+      el("exit-message").textContent = "Fullscreen is unavailable. You can try again.";
+      el("exit-warning").hidden = false;
+    }
   }
 }
 
@@ -163,15 +168,14 @@ el("setup").addEventListener("submit", event => {
 document.addEventListener("fullscreenchange", () => {
   if (!session) return;
   const full = Boolean(document.fullscreenElement);
-  el("resume").hidden = full;
   el("status").textContent = full ? "Fullscreen active" : "Fullscreen exited";
   recordEvent(full ? "Entered fullscreen" : "Exited fullscreen");
   const warning = el("exit-warning");
   warning.hidden = full;
   if (!full) {
-    warning.textContent = hosted.ticket
-      ? "You have left fullscreen. Your instructor can review this event and may take it into account when grading. Select Return to fullscreen to continue."
-      : "You have left fullscreen. This event is recorded in your session log. Select Return to fullscreen to continue.";
+    el("exit-message").textContent = hosted.ticket
+      ? "You have left fullscreen. Your instructor can review this event and may take it into account when grading."
+      : "You have left fullscreen. This event is recorded in your session log.";
   }
 });
 
